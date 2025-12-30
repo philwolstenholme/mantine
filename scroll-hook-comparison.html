@@ -374,7 +374,7 @@
     // ============================================================
     // ISOLATED COMPONENTS (prevents cross-contamination)
     // ============================================================
-    function OptimizedTracker({ onUpdate }) {
+    const OptimizedTracker = React.memo(({ onUpdate }) => {
       const [position, metrics] = useWindowScrollOptimized();
 
       useEffect(() => {
@@ -383,9 +383,9 @@
       }, [position.x, position.y]); // Only update when scroll position changes
 
       return null; // Renders nothing
-    }
+    });
 
-    function OriginalTracker({ onUpdate }) {
+    const OriginalTracker = React.memo(({ onUpdate }) => {
       const [position, metrics] = useWindowScrollOriginal();
 
       useEffect(() => {
@@ -394,7 +394,7 @@
       }, [position.x, position.y]); // Only update when scroll position changes
 
       return null; // Renders nothing
-    }
+    });
 
     // ============================================================
     // COMPARISON COMPONENT (Display only, no hooks)
@@ -409,6 +409,10 @@
         metrics: { renders: 0, setStateCalls: 0, callbackCalls: 0, rafScheduled: 0, rafExecuted: 0, skippedDuplicates: 0, stateUpdatesSkipped: 0 }
       });
       const [, forceUpdate] = useState({});
+
+      // Stable callbacks for memo to work
+      const handleOptimizedUpdate = useCallback(setOptimizedData, []);
+      const handleOriginalUpdate = useCallback(setOriginalData, []);
 
       const resetCounters = () => {
         optimizedData.metrics.renders = 0;
@@ -444,8 +448,8 @@
       return (
         <div className="container">
           {/* Isolated hook trackers - prevent cross-contamination */}
-          <OptimizedTracker onUpdate={setOptimizedData} />
-          <OriginalTracker onUpdate={setOriginalData} />
+          <OptimizedTracker onUpdate={handleOptimizedUpdate} />
+          <OriginalTracker onUpdate={handleOriginalUpdate} />
 
           <div className="sticky-header">
             <h1>🚀 useWindowScroll Optimization Comparison</h1>
