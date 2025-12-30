@@ -372,32 +372,66 @@
     }
 
     // ============================================================
-    // COMPARISON COMPONENT
+    // ISOLATED COMPONENTS (prevents cross-contamination)
+    // ============================================================
+    function OptimizedTracker({ onUpdate }) {
+      const [position, metrics] = useWindowScrollOptimized();
+
+      useEffect(() => {
+        onUpdate({ position, metrics });
+      });
+
+      return null; // Renders nothing
+    }
+
+    function OriginalTracker({ onUpdate }) {
+      const [position, metrics] = useWindowScrollOriginal();
+
+      useEffect(() => {
+        onUpdate({ position, metrics });
+      });
+
+      return null; // Renders nothing
+    }
+
+    // ============================================================
+    // COMPARISON COMPONENT (Display only, no hooks)
     // ============================================================
     function ScrollComparison() {
-      const [positionOptimized, metricsOptimized] = useWindowScrollOptimized();
-      const [positionOriginal, metricsOriginal] = useWindowScrollOriginal();
+      const [optimizedData, setOptimizedData] = useState({
+        position: { x: 0, y: 0 },
+        metrics: { renders: 0, setStateCalls: 0, callbackCalls: 0, rafScheduled: 0, rafExecuted: 0, skippedDuplicates: 0, stateUpdatesSkipped: 0 }
+      });
+      const [originalData, setOriginalData] = useState({
+        position: { x: 0, y: 0 },
+        metrics: { renders: 0, setStateCalls: 0, callbackCalls: 0, rafScheduled: 0, rafExecuted: 0, skippedDuplicates: 0, stateUpdatesSkipped: 0 }
+      });
       const [, forceUpdate] = useState({});
 
       const resetCounters = () => {
-        metricsOptimized.renders = 0;
-        metricsOptimized.setStateCalls = 0;
-        metricsOptimized.callbackCalls = 0;
-        metricsOptimized.rafScheduled = 0;
-        metricsOptimized.rafExecuted = 0;
-        metricsOptimized.skippedDuplicates = 0;
-        metricsOptimized.stateUpdatesSkipped = 0;
+        optimizedData.metrics.renders = 0;
+        optimizedData.metrics.setStateCalls = 0;
+        optimizedData.metrics.callbackCalls = 0;
+        optimizedData.metrics.rafScheduled = 0;
+        optimizedData.metrics.rafExecuted = 0;
+        optimizedData.metrics.skippedDuplicates = 0;
+        optimizedData.metrics.stateUpdatesSkipped = 0;
 
-        metricsOriginal.renders = 0;
-        metricsOriginal.setStateCalls = 0;
-        metricsOriginal.callbackCalls = 0;
-        metricsOriginal.rafScheduled = 0;
-        metricsOriginal.rafExecuted = 0;
-        metricsOriginal.skippedDuplicates = 0;
-        metricsOriginal.stateUpdatesSkipped = 0;
+        originalData.metrics.renders = 0;
+        originalData.metrics.setStateCalls = 0;
+        originalData.metrics.callbackCalls = 0;
+        originalData.metrics.rafScheduled = 0;
+        originalData.metrics.rafExecuted = 0;
+        originalData.metrics.skippedDuplicates = 0;
+        originalData.metrics.stateUpdatesSkipped = 0;
 
         forceUpdate({});
       };
+
+      const metricsOptimized = optimizedData.metrics;
+      const metricsOriginal = originalData.metrics;
+      const positionOptimized = optimizedData.position;
+      const positionOriginal = originalData.position;
 
       const rendersSaved = metricsOriginal.renders - metricsOptimized.renders;
       const setStateSaved = metricsOriginal.setStateCalls - metricsOptimized.setStateCalls;
@@ -407,6 +441,10 @@
 
       return (
         <div className="container">
+          {/* Isolated hook trackers - prevent cross-contamination */}
+          <OptimizedTracker onUpdate={setOptimizedData} />
+          <OriginalTracker onUpdate={setOriginalData} />
+
           <div className="sticky-header">
             <h1>🚀 useWindowScroll Optimization Comparison</h1>
             <p className="subtitle">PR #8574 vs Current Mantine Implementation</p>
