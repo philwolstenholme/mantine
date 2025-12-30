@@ -284,6 +284,24 @@
         vanillaMetrics.totalEvents++;
         performWork();
       }, { passive: true });
+
+      // Update vanilla display every 100ms (pure DOM manipulation, no React)
+      setInterval(() => {
+        document.getElementById('vanilla-total').textContent = vanillaMetrics.totalEvents;
+        document.getElementById('vanilla-scroll').textContent = vanillaMetrics.scrollEvents;
+        document.getElementById('vanilla-resize').textContent = vanillaMetrics.resizeEvents;
+        document.getElementById('vanilla-work').textContent = (vanillaMetrics.workIterations / 1000).toFixed(0) + 'k ops';
+        document.getElementById('vanilla-time').textContent = vanillaMetrics.workTimeMs.toFixed(1) + 'ms';
+      }, 100);
+
+      // Reset vanilla metrics function (global, called from React button)
+      window.resetVanillaMetrics = () => {
+        vanillaMetrics.scrollEvents = 0;
+        vanillaMetrics.resizeEvents = 0;
+        vanillaMetrics.totalEvents = 0;
+        vanillaMetrics.workIterations = 0;
+        vanillaMetrics.workTimeMs = 0;
+      };
     }
 
     // ============================================================
@@ -457,53 +475,6 @@
     });
 
     // ============================================================
-    // VANILLA METRICS DISPLAY
-    // ============================================================
-    function VanillaMetricsDisplay() {
-      const [, forceUpdate] = useState({});
-
-      // Force re-render every 100ms to show vanilla counter updates
-      useEffect(() => {
-        const interval = setInterval(() => forceUpdate({}), 100);
-        return () => clearInterval(interval);
-      }, []);
-
-      return (
-        <div className="hook-card" style={{ border: '3px solid #805ad5' }}>
-          <div className="hook-title">
-            <span>⚡ Vanilla JS Baseline</span>
-            <span className="badge" style={{ background: '#805ad5', color: 'white' }}>NO REACT</span>
-          </div>
-          <div className="metrics">
-            <div className="metric">
-              <span className="metric-label">Total Events</span>
-              <span className="metric-value" style={{ color: '#805ad5' }}>{vanillaMetrics.totalEvents}</span>
-            </div>
-            <div className="metric">
-              <span className="metric-label">Scroll Events</span>
-              <span className="metric-value" style={{ color: '#805ad5' }}>{vanillaMetrics.scrollEvents}</span>
-            </div>
-            <div className="metric">
-              <span className="metric-label">Resize Events</span>
-              <span className="metric-value" style={{ color: '#805ad5' }}>{vanillaMetrics.resizeEvents}</span>
-            </div>
-            <div className="metric">
-              <span className="metric-label">Work Performed</span>
-              <span className="metric-value" style={{ color: '#805ad5' }}>{(vanillaMetrics.workIterations / 1000).toFixed(0)}k ops</span>
-            </div>
-            <div className="metric">
-              <span className="metric-label">CPU Time</span>
-              <span className="metric-value" style={{ color: '#805ad5' }}>{vanillaMetrics.workTimeMs.toFixed(1)}ms</span>
-            </div>
-          </div>
-          <div className="scroll-position">
-            Raw browser events (no React batching/optimization)
-          </div>
-        </div>
-      );
-    }
-
-    // ============================================================
     // COMPARISON COMPONENT (Display only, no hooks)
     // ============================================================
     function ScrollComparison() {
@@ -542,11 +513,10 @@
         originalData.metrics.workIterations = 0;
         originalData.metrics.workTimeMs = 0;
 
-        vanillaMetrics.scrollEvents = 0;
-        vanillaMetrics.resizeEvents = 0;
-        vanillaMetrics.totalEvents = 0;
-        vanillaMetrics.workIterations = 0;
-        vanillaMetrics.workTimeMs = 0;
+        // Reset vanilla metrics (pure JS, outside React)
+        if (typeof window.resetVanillaMetrics === 'function') {
+          window.resetVanillaMetrics();
+        }
 
         forceUpdate({});
       };
@@ -592,8 +562,38 @@
             </div>
 
             <div className="comparison-grid">
-              {/* VANILLA JS BASELINE */}
-              <VanillaMetricsDisplay />
+              {/* VANILLA JS BASELINE - Pure DOM manipulation, no React */}
+              <div className="hook-card" style={{ border: '3px solid #805ad5' }}>
+                <div className="hook-title">
+                  <span>⚡ Vanilla JS Baseline</span>
+                  <span className="badge" style={{ background: '#805ad5', color: 'white' }}>NO REACT</span>
+                </div>
+                <div className="metrics">
+                  <div className="metric">
+                    <span className="metric-label">Total Events</span>
+                    <span className="metric-value" style={{ color: '#805ad5' }} id="vanilla-total">0</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-label">Scroll Events</span>
+                    <span className="metric-value" style={{ color: '#805ad5' }} id="vanilla-scroll">0</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-label">Resize Events</span>
+                    <span className="metric-value" style={{ color: '#805ad5' }} id="vanilla-resize">0</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-label">Work Performed</span>
+                    <span className="metric-value" style={{ color: '#805ad5' }} id="vanilla-work">0k ops</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-label">CPU Time</span>
+                    <span className="metric-value" style={{ color: '#805ad5' }} id="vanilla-time">0.0ms</span>
+                  </div>
+                </div>
+                <div className="scroll-position">
+                  Raw browser events (no React batching/optimization)
+                </div>
+              </div>
 
               {/* OPTIMIZED VERSION */}
               <div className="hook-card optimized">
