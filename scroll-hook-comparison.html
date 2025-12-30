@@ -378,8 +378,9 @@
       const [position, metrics] = useWindowScrollOptimized();
 
       useEffect(() => {
-        onUpdate({ position, metrics });
-      });
+        // Create snapshot of metrics to capture current values
+        onUpdate({ position, metrics: { ...metrics } });
+      }, [position.x, position.y]); // Only update when scroll position changes
 
       return null; // Renders nothing
     }
@@ -388,8 +389,9 @@
       const [position, metrics] = useWindowScrollOriginal();
 
       useEffect(() => {
-        onUpdate({ position, metrics });
-      });
+        // Create snapshot of metrics to capture current values
+        onUpdate({ position, metrics: { ...metrics } });
+      }, [position.x, position.y]); // Only update when scroll position changes
 
       return null; // Renders nothing
     }
