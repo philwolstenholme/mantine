@@ -265,11 +265,23 @@
         rafScheduled: 0,
         rafExecuted: 0,
         skippedDuplicates: 0,
-        stateUpdatesSkipped: 0
+        stateUpdatesSkipped: 0,
+        workIterations: 0,
+        workTimeMs: 0
       });
 
       // Increment render counter
       metrics.current.renders++;
+
+      // Simulate expensive work that happens on every render
+      // (In real apps: component tree updates, effect runs, calculations)
+      const startWork = performance.now();
+      let sum = 0;
+      for (let i = 0; i < 10000; i++) {
+        sum += Math.sqrt(i) * Math.sin(i);
+      }
+      metrics.current.workIterations += 10000;
+      metrics.current.workTimeMs += performance.now() - startWork;
 
       const getScrollPosition = () => {
         return typeof window !== 'undefined'
@@ -338,11 +350,23 @@
         rafScheduled: 0,
         rafExecuted: 0,
         skippedDuplicates: 0,
-        stateUpdatesSkipped: 0
+        stateUpdatesSkipped: 0,
+        workIterations: 0,
+        workTimeMs: 0
       });
 
       // Increment render counter
       metrics.current.renders++;
+
+      // Simulate expensive work that happens on every render
+      // (In real apps: component tree updates, effect runs, calculations)
+      const startWork = performance.now();
+      let sum = 0;
+      for (let i = 0; i < 10000; i++) {
+        sum += Math.sqrt(i) * Math.sin(i);
+      }
+      metrics.current.workIterations += 10000;
+      metrics.current.workTimeMs += performance.now() - startWork;
 
       const getScrollPosition = () => {
         return typeof window !== 'undefined'
@@ -402,11 +426,11 @@
     function ScrollComparison() {
       const [optimizedData, setOptimizedData] = useState({
         position: { x: 0, y: 0 },
-        metrics: { renders: 0, setStateCalls: 0, callbackCalls: 0, rafScheduled: 0, rafExecuted: 0, skippedDuplicates: 0, stateUpdatesSkipped: 0 }
+        metrics: { renders: 0, setStateCalls: 0, callbackCalls: 0, rafScheduled: 0, rafExecuted: 0, skippedDuplicates: 0, stateUpdatesSkipped: 0, workIterations: 0, workTimeMs: 0 }
       });
       const [originalData, setOriginalData] = useState({
         position: { x: 0, y: 0 },
-        metrics: { renders: 0, setStateCalls: 0, callbackCalls: 0, rafScheduled: 0, rafExecuted: 0, skippedDuplicates: 0, stateUpdatesSkipped: 0 }
+        metrics: { renders: 0, setStateCalls: 0, callbackCalls: 0, rafScheduled: 0, rafExecuted: 0, skippedDuplicates: 0, stateUpdatesSkipped: 0, workIterations: 0, workTimeMs: 0 }
       });
       const [, forceUpdate] = useState({});
 
@@ -422,6 +446,8 @@
         optimizedData.metrics.rafExecuted = 0;
         optimizedData.metrics.skippedDuplicates = 0;
         optimizedData.metrics.stateUpdatesSkipped = 0;
+        optimizedData.metrics.workIterations = 0;
+        optimizedData.metrics.workTimeMs = 0;
 
         originalData.metrics.renders = 0;
         originalData.metrics.setStateCalls = 0;
@@ -430,6 +456,8 @@
         originalData.metrics.rafExecuted = 0;
         originalData.metrics.skippedDuplicates = 0;
         originalData.metrics.stateUpdatesSkipped = 0;
+        originalData.metrics.workIterations = 0;
+        originalData.metrics.workTimeMs = 0;
 
         forceUpdate({});
       };
@@ -441,6 +469,8 @@
 
       const rendersSaved = metricsOriginal.renders - metricsOptimized.renders;
       const setStateSaved = metricsOriginal.setStateCalls - metricsOptimized.setStateCalls;
+      const workSaved = metricsOriginal.workIterations - metricsOptimized.workIterations;
+      const timeSaved = metricsOriginal.workTimeMs - metricsOptimized.workTimeMs;
       const savingsPercent = metricsOriginal.renders > 0
         ? ((rendersSaved / metricsOriginal.renders) * 100).toFixed(1)
         : '0.0';
@@ -508,6 +538,14 @@
                     <span className="metric-label">Skipped (Equality Check)</span>
                     <span className="metric-value optimized">{metricsOptimized.stateUpdatesSkipped}</span>
                   </div>
+                  <div className="metric">
+                    <span className="metric-label">Work Performed</span>
+                    <span className="metric-value optimized">{(metricsOptimized.workIterations / 1000).toFixed(0)}k ops</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-label">CPU Time</span>
+                    <span className="metric-value optimized">{metricsOptimized.workTimeMs.toFixed(1)}ms</span>
+                  </div>
                 </div>
                 <div className="scroll-position">
                   Position: ({positionOptimized.x}, {positionOptimized.y})
@@ -549,6 +587,14 @@
                     <span className="metric-label">Skipped (Equality Check)</span>
                     <span className="metric-value original">{metricsOriginal.stateUpdatesSkipped}</span>
                   </div>
+                  <div className="metric">
+                    <span className="metric-label">Work Performed</span>
+                    <span className="metric-value original">{(metricsOriginal.workIterations / 1000).toFixed(0)}k ops</span>
+                  </div>
+                  <div className="metric">
+                    <span className="metric-label">CPU Time</span>
+                    <span className="metric-value original">{metricsOriginal.workTimeMs.toFixed(1)}ms</span>
+                  </div>
                 </div>
                 <div className="scroll-position">
                   Position: ({positionOriginal.x}, {positionOriginal.y})
@@ -563,7 +609,9 @@
                 Fewer renders ({savingsPercent}% reduction)
               </div>
               <div style={{ marginTop: '15px', fontSize: '14px' }}>
-                {setStateSaved} fewer setState calls
+                {setStateSaved} fewer setState calls<br />
+                {(workSaved / 1000).toFixed(0)}k operations avoided<br />
+                {timeSaved.toFixed(1)}ms CPU time saved
               </div>
             </div>
           </div>
